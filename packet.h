@@ -75,12 +75,7 @@ typedef struct {
 //
 
 
-
-// Check if a (presumably received) packet is well-formed
-bool is_well_formed(void* flat_packet);
-
-
-// Build an iovec list out of packet info (to pass to send, etc.)  
+// Build an iovec list out of packet info (to pass to send(), etc.)  
 size_t build_iovec_list(packet_info pi, struct iovec* iovec_list);
 
 
