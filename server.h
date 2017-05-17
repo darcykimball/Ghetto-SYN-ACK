@@ -32,7 +32,7 @@ bool server_init(server* serv, struct sockaddr_in* addr);
 
 
 // Process a received packet
-void server_process_packet(server* serv, uint8_t const* raw_packet, struct sockaddr_in* ret);
+void server_process_packet(server* serv, uint8_t const* raw_packet, struct sockaddr_in const* ret);
 
 
 // Check if a (presumably received) packet is well-formed, setting the given
@@ -46,7 +46,7 @@ void server_process_packet(server* serv, uint8_t const* raw_packet, struct socka
 // Postconditions: Argument packet_info (if non-NULL) is set to the info in 
 // the interpreted packet; as much data as possible is set, even if the packet
 // is rejected. 'code' is set to the appropriate reject code, if needed.
-bool server_check_packet(server* serv, uint8_t const* raw_packet, size_t raw_packet_len, packet_info* pi, reject_code* code);
+bool server_check_packet(server* serv, uint8_t const* raw_packet, packet_info* pi, reject_code* code);
 
 
 // Send an ACK packet
@@ -59,7 +59,6 @@ void server_send_ack(server* serv, client_id client, struct sockaddr_in const* r
 
 // Send a reject (error) packet
 void server_send_reject(server* serv, client_id client, struct sockaddr_in const* ret, reject_code code);
-
 
 
 // Run the server, i.e. wait indefinitely for packets, process, and reply with

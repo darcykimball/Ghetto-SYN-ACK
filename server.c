@@ -25,7 +25,7 @@ bool server_init(server* serv, struct sockaddr_in* addr) {
     serv->addr.sin_port = htons(DEFAULT_PORT);
   } else {
     memcpy(&serv->addr, addr, sizeof(struct sockaddr_in));
-  T}
+  }
 
 
   // Initialize next expected sequence numbers
@@ -74,7 +74,8 @@ void server_process_packet(server* serv, uint8_t const* raw_packet, struct socka
 }
 
 
-bool server_check_packet(server* serv, uint8_t const* raw_packet, size_t raw_packet_len, packet_info* pi, reject_code* code) {
+// FIXME: check that you don't clobber or look over the raw buffer size!!??
+bool server_check_packet(server* serv, uint8_t const* raw_packet, packet_info* pi, reject_code* code) {
   uint8_t const* ptr = raw_packet; // Temp pointer for traversing raw packet
   uint16_t start_id, end_id; // To hold raw packet data
 
@@ -122,14 +123,7 @@ bool server_check_packet(server* serv, uint8_t const* raw_packet, size_t raw_pac
 }
 
 
-// Send an ACK packet
-// Precondition: The server just finished processing a valid received packet
-// from 'client'.
-// Postcondition: The last received sequence number for the client is
-// incremented.
-void server_send_ack(server* serv, client_id client);
+void server_send_ack(server* serv, client_id client, struct sockaddr_in const* ret);
 
 
-// Run the server, i.e. wait indefinitely for packets, process, and reply with
-// ACKs as appropriate.
 void server_run(server* serv);
