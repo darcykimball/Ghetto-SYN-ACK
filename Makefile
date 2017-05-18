@@ -7,13 +7,14 @@ EXES = driver_server driver_client
 all: $(EXES)
 
 
-driver_server: driver_server.o shell.o raw_iterator.o packet.o \
-				client_commands.o server.o
-	$(CC) -o driver_server driver_server.o shell.o raw_iterator.o packet.o client_commands.o
+driver_server: driver_server.o shell.o raw_iterator.o packet.o server.o
+	$(CC) -o driver_server driver_server.o shell.o raw_iterator.o packet.o $(LDFLAGS)
 
 
-driver_client: driver_client.o shell.o raw_iterator.o packet.o server.o
-	$(CC) -o driver_client driver_client.o shell.o raw_iterator.o packet.o server.o
+driver_client: driver_client.o shell.o raw_iterator.o packet.o client.o \
+				client_commands.o
+	$(CC) -o driver_client driver_client.o shell.o raw_iterator.o packet.o \
+					client.o client_commands.o $(LDFLAGS)
 
 
 packet.o: packet.h packet.c

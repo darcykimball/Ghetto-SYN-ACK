@@ -21,7 +21,7 @@ typedef struct {
 
 
 // Main interpreter loop
-void loop(command_pair* command_map, size_t n_commands);
+void loop(command_pair const* command_map, size_t n_commands);
 
 
 #endif // SHELL_H

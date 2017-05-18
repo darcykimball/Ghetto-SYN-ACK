@@ -123,7 +123,19 @@ bool server_check_packet(server* serv, uint8_t const* raw_packet, packet_info* p
 }
 
 
-void server_send_ack(server* serv, client_id client, struct sockaddr_in const* ret);
+// TODO
+void server_send_ack(server* serv, client_id client, struct sockaddr_in const* ret) {
+
+}
 
 
-void server_run(server* serv);
+// TODO
+void server_send_reject(server* serv, client_id client, struct sockaddr_in const* ret, reject_code code) {
+
+}
+
+
+
+// TODO
+void server_run(server* serv) {
+}

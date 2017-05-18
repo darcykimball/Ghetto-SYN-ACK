@@ -6,13 +6,28 @@
 #include "client.h"
 
 
+#define N_COMMANDS 2
+
+
+// The single client instance
+extern client the_client;
+
+
+// Command table
+extern const command_pair commands[];
+
+
+// The client ID for this session
+extern client_id id;
+
+
 //
 // Client shell commands
 //
 
 
 // Send a string to some destination
-// Usage: send_string [dest_ip] [port]
+// Usage: send_string [dest_ip] [port] [seq_num] [string]
 void send_string(size_t argc, char** argv);
 
 

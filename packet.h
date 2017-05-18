@@ -7,6 +7,13 @@
 #include <stdbool.h>
 
 
+// Get the size of the range of an unsigned type
+// XXX: taken from http://stackoverflow.com/questions/2053843/min-and-max-value-of-data-type-in-c
+#define urange(t) ((((0x1ULL << ((sizeof(t) * 8ULL) - 1ULL)) - 1ULL) | \
+                    (0xFULL << ((sizeof(t) * 8ULL) - 4ULL))) + 1)
+
+
+
 //
 // Constants 
 //
@@ -77,6 +84,38 @@ typedef struct {
 
 // Build an iovec list out of packet info (to pass to send(), etc.)  
 size_t build_iovec_list(packet_info pi, struct iovec* iovec_list);
+
+
+//
+// XXX: For well-formed packets, flatten() and interpret_packet() should be
+// inverses, i.e.
+//
+// flatten(pi, buf);
+// interpret_packet(buf, pi);
+//
+// and
+//
+// interpret_packet(buf, pi);
+// flatten(pi, buf);
+// 
+// Should do nothing to pi or buf.
+//
+
+
+// Flatten and copy a packet_info into a buffer for sending.
+// Return value: the size of the flattened packet, in bytes
+size_t flatten(packet_info const* pi, void* buf);
+
+
+// Interpret a raw buffer as a packet. As much info is filled out as possible
+// even if the packet overall is malformed.
+// Return value: True if interpretation was OK, false otherwise
+// POSTCONDITION: Argument 'pi' is set to the appropriate info if true is
+// returned.
+// XXX: the 'data' field inside the packet info is left pointing to inside
+// the given buffer, so any data must be processed before the buffers is
+// reused.
+bool interpret_packet(void const* buf, packet_info* pi);
 
 
 #endif // PACKET_H

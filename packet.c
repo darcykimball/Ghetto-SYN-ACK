@@ -71,3 +71,14 @@ size_t build_iovec_list(packet_info pi, struct iovec* iovec_list) {
 
   return list_len;
 }
+
+
+// TODO
+size_t flatten(packet_info const* pi, void* buf) {
+}
+
+
+// TODO
+bool interpret_packet(void const* buf, packet_info* pi) {
+}
+

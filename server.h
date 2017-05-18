@@ -46,6 +46,7 @@ void server_process_packet(server* serv, uint8_t const* raw_packet, struct socka
 // Postconditions: Argument packet_info (if non-NULL) is set to the info in 
 // the interpreted packet; as much data as possible is set, even if the packet
 // is rejected. 'code' is set to the appropriate reject code, if needed.
+// FIXME: move this to packet.h!!! so both server and client can use it; just make a function to convert from serialized to packet_info!!!
 bool server_check_packet(server* serv, uint8_t const* raw_packet, packet_info* pi, reject_code* code);
 
 

@@ -21,11 +21,11 @@ static char const PROMPT_STR[] = ">>";
 
 
 static size_t tokenize(char* str, char** tokens, size_t max_tokens);
-static command_fn lookup(command_pair* commands, size_t n_commands,
+static command_fn lookup(command_pair const* commands, size_t n_commands,
   char const* command);  
 
 
-void loop(command_pair* command_map, size_t n_commands) {
+void loop(command_pair const* command_map, size_t n_commands) {
   char* input = NULL; // Buffer to hold raw line input
   size_t line_len = 0; // Number of characters in read line
   char* tokens[MAX_N_TOKENS]; // To hold tokens for a given line
@@ -115,7 +115,7 @@ static size_t tokenize(char* str, char** tokens, size_t max_tokens) {
 
 
 // Look up a command; returns NULL if not present
-static command_fn lookup(command_pair* commands, size_t n_commands,
+static command_fn lookup(command_pair const* commands, size_t n_commands,
   char const* command) {
   // Look through available commands one-by-one
   for (size_t i = 0; i < n_commands; i++) {

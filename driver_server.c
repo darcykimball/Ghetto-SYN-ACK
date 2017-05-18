@@ -7,7 +7,7 @@
 
 
 int main(int argc, char** argv) {
-  // Setup the client (configuration)
+  // Setup the server (configuration)
   // TODO
 
 
