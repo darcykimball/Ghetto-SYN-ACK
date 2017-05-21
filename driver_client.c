@@ -11,9 +11,12 @@ client the_client; // The single, global client instance
 client_id id; // The client ID for this session TODO
 
 
-int main(int argc, char** argv) {
+int main() {
   // Setup the client (configuration)
-  // TODO
+  if (!client_init(&the_client, NULL)) {
+    fprintf(stderr, "Unable to start client! Exiting...\n");
+    exit(1);
+  }
 
   // Initialize ID
   id = 11;

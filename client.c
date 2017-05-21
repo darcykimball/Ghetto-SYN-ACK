@@ -27,6 +27,11 @@ bool client_init(client* cl, struct sockaddr_in const* addr) {
 
 
   // Setup the socket
+  if ((cl->sock_fd = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
+    perror("client_init: Couldn't create socket!");
+    return false;
+  }
+
   if (bind(cl->sock_fd,
       (struct sockaddr*)&cl->addr, sizeof(cl->addr)) < 0) {
     perror("client_init: Couldn't bind address to socket!");
@@ -49,7 +54,8 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
 
 
   // Serialize packet data
-  raw_len = flatten(pi, cl->send_buf);
+  raw_len = flatten(pi, cl->send_buf, sizeof(cl->send_buf));
+
 
   
   // Send
@@ -73,7 +79,7 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
       // Wait...then check if timed out
       if (
                !client_recv_packet(cl)
-            || !interpret_packet(cl->recv_buf, &reply_pi)
+            || !interpret_packet(cl->recv_buf, &reply_pi, sizeof(cl->recv_buf))
             || reply_pi.type != ACK
       ) {
         // Timed out or had an invalid packet; update tries and try again

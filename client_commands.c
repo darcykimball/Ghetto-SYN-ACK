@@ -46,14 +46,15 @@ void send_string(size_t argc, char** argv) {
 
   // FIXME: not safe if IPv6...
   // TODO: debug/print!!
-  printf("argv[0] = %s\n", argv[0]);
-  inet_pton(AF_INET, argv[1], &dest_addr);
+  inet_pton(AF_INET, argv[1], &dest_addr.sin_addr);
 
+  dest_addr.sin_family = AF_INET;
   dest_addr.sin_port = htons(strtoul(argv[2], &end, 10)); // FIXME dangerous??
   if (end == argv[2] || *end != '\0') {
     SHELL_ERROR("send_string: Invalid port number!");
     return;
   }
+
 
   seq_num = strtoul(argv[3], &end, 10);
   if (end == argv[3] || *end != '\0') {
