@@ -2,6 +2,10 @@ CC = clang-3.7
 CFLAGS = -g -Wall -std=c99
 LDFLAGS = ''
 EXES = driver_server driver_client
+TESTS = test_rit test_packet
+
+
+tests: $(TESTS)
 
 
 all: $(EXES)
@@ -15,6 +19,22 @@ driver_client: driver_client.o shell.o raw_iterator.o packet.o client.o \
 				client_commands.o
 	$(CC) -o driver_client driver_client.o shell.o raw_iterator.o packet.o \
 					client.o client_commands.o $(LDFLAGS)
+
+
+test_rit: test_rit.o raw_iterator.o
+	$(CC) -o test_rit test_rit.o raw_iterator.o
+
+
+test_packet: test_packet.o raw_iterator.o packet.o
+	$(CC) -o test_packet test_packet.o raw_iterator.o packet.o
+
+
+test_rit.o: test_rit.c
+	$(CC) $(CFLAGS) -c test_rit.c
+
+
+test_packet.o: test_packet.c
+	$(CC) $(CFLAGS) -c test_packet.c
 
 
 packet.o: packet.h packet.c
@@ -50,4 +70,4 @@ new:
 	make all
 
 
-.PHONY: all new clean
+.PHONY: all new clean tests

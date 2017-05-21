@@ -52,7 +52,7 @@ typedef union {
   struct {
     sequence_num seq_num;
     payload_len len;
-    void* payload;
+    void const* payload;
   } data_info;
 
   // XXX: Kept these as structs to keep access/naming consistent, i.e.
@@ -100,7 +100,7 @@ typedef struct {
 
 // Flatten and copy a packet_info into a buffer for sending.
 // Return value: the size of the flattened packet, in bytes
-size_t flatten(packet_info const* pi, void* buf);
+size_t flatten(packet_info const* pi, void* buf, size_t size);
 
 
 // Interpret a raw buffer as a packet. As much info is filled out as possible
@@ -111,7 +111,7 @@ size_t flatten(packet_info const* pi, void* buf);
 // XXX: the 'data' field inside the packet info is left pointing to inside
 // the given buffer, so any data must be processed before the buffers is
 // reused.
-bool interpret_packet(void const* buf, packet_info* pi);
+bool interpret_packet(void const* buf, packet_info* pi, size_t size);
 
 
 #endif // PACKET_H
