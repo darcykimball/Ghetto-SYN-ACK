@@ -82,10 +82,6 @@ typedef struct {
 //
 
 
-// Build an iovec list out of packet info (to pass to send(), etc.)  
-size_t build_iovec_list(packet_info pi, struct iovec* iovec_list);
-
-
 //
 // XXX: For well-formed packets, flatten() and interpret_packet() should be
 // inverses, i.e.

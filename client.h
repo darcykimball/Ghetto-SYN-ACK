@@ -22,6 +22,7 @@ extern bool verbose;
 // Ack timer
 typedef struct {
   time_t last_sent; // Time of the most recent send attempt
+                    // XXX: Not needed, but here for debugging purposes
   uint8_t tries;   // Number of send attempts so far (max 3? FIXME)
 } ack_timer;
 

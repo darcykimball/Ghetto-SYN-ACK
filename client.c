@@ -35,7 +35,6 @@ bool client_init(client* cl, struct sockaddr_in const* addr) {
 
 
   // Set timeout value for receiving
-  // FIXME: renamd sock_fd!! as we use it for both sending/receiving
   setsockopt(cl->sock_fd, SOL_SOCKET, SO_RCVTIMEO, 
     (const void*)&timeout, sizeof(struct timeval));
 
@@ -60,13 +59,16 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
     return;
   }
 
-
+  
   // Start timer and wait for ACK if data was sent
   // FIXME: looping over tries and keeping track of tries is REDUNDANT!!
   // FIXME: so is using a timeout! while keeping track of times!!
   if (pi->type == DATA) {
     while (true) {
-      cl->timers[pi->cont.data_info.seq_num].last_sent = time(NULL);
+      sequence_num seq_num = pi->cont.data_info.seq_num; // For readability
+
+
+      cl->timers[seq_num].last_sent = time(NULL);
 
       // Wait...then check if timed out
       if (
@@ -75,10 +77,14 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
             || reply_pi.type != ACK
       ) {
         // Timed out or had an invalid packet; update tries and try again
-        if (++cl->timers[pi->cont.data_info.seq_num].tries > MAX_TRIES) {
-          // Max tries reached; give up
+        if (++cl->timers[seq_num].tries > MAX_TRIES) {
+          // Max tries reached; give up and reset info for that sequence number
           fprintf(stderr,
             "client_send_packet: Maximum tries reached! Giving up.\n");
+
+          cl->timers[seq_num].last_sent = 0;
+          cl->timers[seq_num].tries = 0;
+
           return;
         }
 
