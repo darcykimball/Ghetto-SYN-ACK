@@ -38,27 +38,26 @@ void send_string(size_t argc, char** argv) {
 
 
   // Check for and validate arguments
-  if (argc != 3) {
-    SHELL_ERROR("Usage: send_string [dest_ip] [port] [string]");
+  if (argc != 5) {
+    SHELL_ERROR("Usage: send_string [dest_ip] [port] [seq_num] [string]");
     return;
   }
 
 
   // FIXME: not safe if IPv6...
   // TODO: debug/print!!
-  inet_pton(AF_INET, argv[0], &dest_addr);
+  printf("argv[0] = %s\n", argv[0]);
+  inet_pton(AF_INET, argv[1], &dest_addr);
 
-  dest_addr.sin_port = htons(strtoul(argv[1], &end, 10)); // FIXME dangerous??
-  if (end == argv[1] || *end != '\0') {
+  dest_addr.sin_port = htons(strtoul(argv[2], &end, 10)); // FIXME dangerous??
+  if (end == argv[2] || *end != '\0') {
     SHELL_ERROR("send_string: Invalid port number!");
-    perror("send_string:");
     return;
   }
 
-  seq_num = strtoul(argv[2], &end, 10);
-  if (end == argv[2] || *end != '\0') {
+  seq_num = strtoul(argv[3], &end, 10);
+  if (end == argv[3] || *end != '\0') {
     SHELL_ERROR("send_string: Invalid sequence number!");
-    perror("send_string:");
     return;
   }
   
@@ -67,8 +66,8 @@ void send_string(size_t argc, char** argv) {
   pi.type = DATA;
   pi.id = id;
   pi.cont.data_info.seq_num = seq_num;
-  pi.cont.data_info.len = strlen(argv[3]) + 1; // XXX: Send the null byte too
-  pi.cont.data_info.payload = argv[3];
+  pi.cont.data_info.len = strlen(argv[4]) + 1; // XXX: Send the null byte too
+  pi.cont.data_info.payload = argv[4];
 
   
   // Send
