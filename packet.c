@@ -104,8 +104,8 @@ size_t flatten(packet_info const* pi, void* buf, size_t size) {
 }
 
 
-// TODO
-bool interpret_packet(void const* buf, packet_info* pi, size_t size) {
+// FIXME: How to check for length mismatch??
+int interpret_packet(void const* buf, packet_info* pi, size_t size) {
   raw_iterator rit; // Raw iterator for reading buffer
   rit_init(&rit, (uint8_t*)buf, size); // XXX: no constness is OK; read only
   uint16_t network_short; // For reading shorts
@@ -116,7 +116,9 @@ bool interpret_packet(void const* buf, packet_info* pi, size_t size) {
   rit_read(&rit, sizeof(uint16_t), &network_short);
   if (network_short != PACKET_START) {
     fprintf(stderr, "interpret_packet: Bad PACKET_START!\n");
-    return false; 
+    
+    // XXX: I overloaded NO_END; see packet.h
+    return NO_END;
   }
 
 
@@ -162,7 +164,7 @@ bool interpret_packet(void const* buf, packet_info* pi, size_t size) {
     default:
       // Invalid packet type was found
       fprintf(stderr, "interpret_packet: Bad packet type!\n");
-      return false;
+      return BAD_TYPE;
   }
 
 
@@ -170,10 +172,10 @@ bool interpret_packet(void const* buf, packet_info* pi, size_t size) {
   rit_read(&rit, sizeof(uint16_t), &network_short);
   if (network_short != PACKET_END) {
     fprintf(stderr, "interpret_packet: Bad PACKET_END!\n");
-    return false; 
+    return NO_END; 
   }
 
   
-  return true;
+  return 0;
 }
 

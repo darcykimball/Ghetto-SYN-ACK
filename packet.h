@@ -42,8 +42,9 @@ typedef enum {     // This packet communicates...
 typedef enum {         // The received packet was rejected because...
   OUT_OF_SEQ = 0xFFF4, // Out of sequence
   BAD_LEN    = 0xFFF5, // Length field mismatches payload length
-  NO_END     = 0xFFF6, // No 'end of packet' ID
-  DUP_PACK   = 0xFFF7  // This was a duplicate (already received before)
+  NO_END     = 0xFFF6, // No 'end of packet' OR 'start of packet' ID
+  DUP_PACK   = 0xFFF7, // This was a duplicate (already received before)
+  BAD_TYPE   = 0xFFF8  // XXX: This is extra, but it seemed necessary
 } reject_code;
 
 
@@ -105,13 +106,15 @@ size_t flatten(packet_info const* pi, void* buf, size_t size);
 
 // Interpret a raw buffer as a packet. As much info is filled out as possible
 // even if the packet overall is malformed.
-// Return value: True if interpretation was OK, false otherwise
-// POSTCONDITION: Argument 'pi' is set to the appropriate info if true is
-// returned.
+// Return value: Zero if everything was OK, or the reject_code (uncasted)
+// otherwise.
+// POSTCONDITION: Argument 'pi' is set to the appropriate info if 0 is returned.
 // XXX: the 'data' field inside the packet info is left pointing to inside
 // the given buffer, so any data must be processed before the buffers is
 // reused.
-bool interpret_packet(void const* buf, packet_info* pi, size_t size);
+// XXX: The sequence number parameter is only used if the processed packet is
+// of type DATA
+int interpret_packet(void const* buf, packet_info* pi, size_t size);
 
 
 #endif // PACKET_H

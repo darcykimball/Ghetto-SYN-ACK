@@ -2,9 +2,12 @@
 #define SERVER_H
 
 
+#include <stddef.h>
+#include <stdlib.h>
 #include <netinet/ip.h>
 
 #include "packet.h"
+
 
 #define DEFAULT_PORT 4321
 
@@ -13,12 +16,15 @@
 #define urange(t) ((((0x1ULL << ((sizeof(t) * 8ULL) - 1ULL)) - 1ULL) | \
                     (0xFULL << ((sizeof(t) * 8ULL) - 4ULL))) + 1)
 
+
 // Server state
 typedef struct {
-  sequence_num last_seq[urange(client_id)]; // Mapping of clients to next
+  sequence_num last_recvd[urange(client_id)]; // Mapping of clients to next
                                             // expected sequence numbers  
   int sock_fd; // The server's send/recv socket
   struct sockaddr_in addr;  // The server's IP address/port
+  uint8_t send_buf[BUFSIZ]; // Buffer for packets to be sent
+  uint8_t recv_buf[BUFSIZ]; // Buffer for received packets
 } server;
 
 
@@ -32,7 +38,7 @@ bool server_init(server* serv, struct sockaddr_in* addr);
 
 
 // Process a received packet
-void server_process_packet(server* serv, uint8_t const* raw_packet, struct sockaddr_in const* ret);
+void server_process_packet(server* serv, struct sockaddr_in const* ret);
 
 
 // Check if a (presumably received) packet is well-formed, setting the given

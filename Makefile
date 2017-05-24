@@ -12,7 +12,8 @@ tests: $(TESTS)
 
 
 driver_server: driver_server.o shell.o raw_iterator.o packet.o server.o
-	$(CC) -o driver_server driver_server.o shell.o raw_iterator.o packet.o $(LDFLAGS)
+	$(CC) -o driver_server driver_server.o shell.o raw_iterator.o packet.o \
+					server.o $(LDFLAGS)
 
 
 driver_client: driver_client.o shell.o raw_iterator.o packet.o client.o \
@@ -62,7 +63,7 @@ server.o: server.h server.c
 
 
 clean:
-	rm -rf *.o $(EXES)
+	rm -rf *.o $(EXES) $(TESTS)
 
 
 new:
