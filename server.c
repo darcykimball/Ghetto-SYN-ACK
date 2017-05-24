@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
+#include <arpa/inet.h>
 #include <string.h>
 #include <assert.h>
 
@@ -15,12 +16,12 @@ static void alert_reject(packet_info* pi, reject_code code);
 
 
 bool server_init(server* serv, struct sockaddr_in* addr) {
-  fprintf(stderr, "Initializing server...\n");
+  fprintf(stderr, "server_init: Initializing server...\n");
 
 
   // Setup a socket
   if ((serv->sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    perror("server_init(): Couldn't create socket");
+    perror("server_init: Couldn't create socket");
     return false;
   }
 
@@ -35,12 +36,22 @@ bool server_init(server* serv, struct sockaddr_in* addr) {
   }
 
 
+  // Bind the socket
+  if (bind(serv->sock_fd, (struct sockaddr*)&serv->addr,
+        sizeof(struct sockaddr_in)) == -1) {
+    perror("server_init: Couldn't bind socket to address");
+    return false;
+  }
+
+
   // Initialize next expected sequence numbers
-  memset(serv->last_recvd, 0, sizeof(serv->last_recvd));
+  memset(serv->expect_recv, 0, sizeof(serv->expect_recv));
 
 
 
   fprintf(stderr, "Done initializing!\n");
+  fprintf(stderr, "Server IP: %0x\n", serv->addr.sin_addr.s_addr);
+  fprintf(stderr, "Server port: %0x\n", serv->addr.sin_port);
   return true;
 }
 
@@ -49,21 +60,23 @@ bool server_init(server* serv, struct sockaddr_in* addr) {
 void server_process_packet(server* serv, struct sockaddr_in const* ret) {
   packet_info pi; // For storing interpreted packet
   int code; // For return value of interpret_packet()
+  char ip_str[INET_ADDRSTRLEN]; // For pretty-printing addresses
 
 
   // Check the packet for errors
-  // FIXME: need both interpret_packet and server_check_packet (TBD) to
-  // coordinate reject_code!!
   code = interpret_packet(serv->recv_buf, &pi, sizeof(serv->recv_buf));
 
 
   // Check for additional errors
   if (code == 0) {
     // Check sequence number
-    if (pi.cont.data_info.seq_num == serv->last_recvd[pi.id]) {
-      code = DUP_PACK;
-    } else if (pi.cont.data_info.seq_num != (serv->last_recvd[pi.id] + 1)) {
-      code = OUT_OF_SEQ;
+    // FIXME: special case: both zero -> overflow!...or will it wrap around??
+    if (pi.cont.data_info.seq_num != serv->expect_recv[pi.id]) {
+      if (pi.cont.data_info.seq_num  == (serv->expect_recv[pi.id] - 1)) {
+        code = DUP_PACK;
+      } else {
+        code = OUT_OF_SEQ;
+      }
     }
   }
 
@@ -71,12 +84,22 @@ void server_process_packet(server* serv, struct sockaddr_in const* ret) {
   // Notify of any errors if present
   if (code != 0) {
     alert_reject(&pi, (reject_code)code);
-    //
+    
     // Reply to client with reject message
-    server_send_reject(serv, pi.id, ret, (reject_code)code);
+    fprintf(stderr, "server_run: Sending REJECT message\n");
+    server_send_reject(serv, &pi, ret, (reject_code)code);
   } else { // All is well
-    // Send an ACK
+    fprintf(stderr, "server_run: Received message: \"%s\"\n",
+      (char const*)pi.cont.data_info.payload);
+    fprintf(stderr, "server_run: from %s:%u\n", inet_ntop(AF_INET,
+      ret, ip_str, sizeof(struct sockaddr_in)), ntohs(ret->sin_port));
+
+
+    // Send an ACK, and update next expected sequence number
+    fprintf(stderr, "server_run: Sending ACK for sequence number %u\n",
+      pi.cont.data_info.seq_num);
     server_send_ack(serv, pi.id, ret);
+    ++serv->expect_recv[pi.id];
   }
 }
 
@@ -87,7 +110,7 @@ void server_send_ack(server* serv, client_id id, struct sockaddr_in const* ret) 
   pi.type = ACK;
   pi.id = id;
   // FIXME: check!!! for off by 1???
-  pi.cont.ack_info.recvd_seq_num = serv->last_recvd[id];
+  pi.cont.ack_info.recvd_seq_num = serv->expect_recv[id];
 
 
   size_t flattened_len = flatten(&pi, serv->send_buf, sizeof(serv->send_buf));
@@ -104,12 +127,13 @@ void server_send_ack(server* serv, client_id id, struct sockaddr_in const* ret) 
 
 
 // FIXME: factor this a bit along with send_ack???
-void server_send_reject(server* serv, client_id id, struct sockaddr_in const* ret, reject_code code) {
+void server_send_reject(server* serv, packet_info const* bad_pi,
+  struct sockaddr_in const* ret, reject_code code) {
   packet_info pi;
   pi.type = REJECT;
-  pi.id = id;
+  pi.id = bad_pi->id;
   pi.cont.reject_info.code = code;
-  pi.cont.reject_info.recvd_seq_num = serv->last_recvd[id];
+  pi.cont.reject_info.recvd_seq_num = bad_pi->cont.data_info.seq_num;
 
 
   size_t flattened_len = flatten(&pi, serv->send_buf, sizeof(serv->send_buf));
@@ -134,10 +158,13 @@ void server_run(server* serv) {
   // Wait...
   while (true) {
     // Get a message
+    fprintf(stderr, "server_run: Waiting for messages...\n");
     recvfrom(serv->sock_fd, serv->recv_buf, sizeof(serv->recv_buf), 0,
       (struct sockaddr*)&client_addr, &addrlen);
 
-    assert(addrlen == sizeof(struct sockaddr_in));
+    fprintf(stderr, "server_run: Got a packet!\n");
+
+    assert(addrlen == sizeof(struct sockaddr_in)); // FIXME: remove; debug
 
 
     // Process and reply
@@ -148,7 +175,7 @@ void server_run(server* serv) {
 
 static void alert_reject(packet_info* pi, reject_code code) {
   // Print out errors server-side
-  fprintf(stderr, "server_check_packet: From client %d:\n", pi->id);
+  fprintf(stderr, "server_process_packet: From client %d:\n", pi->id);
   switch (code) {
     case NO_END:
       fprintf(stderr, "server_process_packet: No packet terminator\n");

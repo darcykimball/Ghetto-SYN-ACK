@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <arpa/inet.h>
 #include <netinet/ip.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 
 #include "client_commands.h"
@@ -35,6 +39,8 @@ void send_string(size_t argc, char** argv) {
   packet_info pi; // For building the packet to send
   sequence_num seq_num; // User-supplied sequence number; usually not needed
                         // but in this allows explicit out-of-sequence sends
+  struct addrinfo* aip; // For parsing address/port
+  int gai_retval; // For return value of getaddressinfo()
 
 
   // Check for and validate arguments
@@ -46,14 +52,28 @@ void send_string(size_t argc, char** argv) {
 
   // FIXME: not safe if IPv6...
   // TODO: debug/print!!
-  inet_pton(AF_INET, argv[1], &dest_addr.sin_addr);
+  if ((gai_retval = getaddrinfo(argv[1], argv[2], NULL, &aip))) {
+    if (gai_retval == EAI_SYSTEM) {
+      perror("send_string");
+    }
 
-  dest_addr.sin_family = AF_INET;
-  dest_addr.sin_port = htons(strtoul(argv[2], &end, 10)); // FIXME dangerous??
-  if (end == argv[2] || *end != '\0') {
-    SHELL_ERROR("send_string: Invalid port number!");
+    fprintf(stderr, "send_string: %s\n", gai_strerror(gai_retval));
     return;
   }
+
+  assert(aip->ai_addrlen == sizeof(struct sockaddr_in));
+
+  dest_addr = *(struct sockaddr_in*)(aip->ai_addr);
+  freeaddrinfo(aip);
+
+  //inet_pton(AF_INET, argv[1], &dest_addr.sin_addr);
+
+  //dest_addr.sin_family = AF_INET;
+  //dest_addr.sin_port = htons(strtoul(argv[2], &end, 10)); // FIXME dangerous??
+  //if (end == argv[2] || *end != '\0') {
+  //  SHELL_ERROR("send_string: Invalid port number!");
+  //  return;
+  //}
 
 
   seq_num = strtoul(argv[3], &end, 10);
@@ -72,6 +92,10 @@ void send_string(size_t argc, char** argv) {
 
   
   // Send
+  fprintf(stderr, "Sending to IP %0x, port %x\n",
+    dest_addr.sin_addr.s_addr,
+    dest_addr.sin_port);
+
   client_send_packet(&the_client, &pi, &dest_addr);
 }
 

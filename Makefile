@@ -1,5 +1,5 @@
 CC = clang-3.7
-CFLAGS = -g -Wall -std=c99
+CFLAGS = -g -Wall -std=gnu99
 LDFLAGS = ''
 EXES = driver_server driver_client
 TESTS = test_rit test_packet

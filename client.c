@@ -2,6 +2,7 @@
 #include <time.h>
 #include <string.h>
 #include <netinet/ip.h>
+#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -18,9 +19,13 @@ bool client_init(client* cl, struct sockaddr_in const* addr) {
 
   memset(cl, 0, sizeof(client));
   if (addr == NULL) {
+    // FIXME: make more general??
     cl->addr.sin_family = AF_INET;
     cl->addr.sin_port = htons(0); // Let bind() choose a random port
-    cl->addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    inet_pton(AF_INET, "127.0.0.1", &cl->addr.sin_addr.s_addr);
+
+    // FIXME: which approach??
+    //cl->addr.sin_addr.s_addr = htonl(INADDR_ANY);
   } else {
     memcpy(&cl->addr, addr, sizeof(struct sockaddr_in));
   }
@@ -33,7 +38,7 @@ bool client_init(client* cl, struct sockaddr_in const* addr) {
   }
 
   if (bind(cl->sock_fd,
-      (struct sockaddr*)&cl->addr, sizeof(cl->addr)) < 0) {
+      (struct sockaddr*)&cl->addr, sizeof(struct sockaddr_in)) < 0) {
     perror("client_init: Couldn't bind address to socket!");
     return false;
   }

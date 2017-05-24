@@ -19,7 +19,7 @@
 
 // Server state
 typedef struct {
-  sequence_num last_recvd[urange(client_id)]; // Mapping of clients to next
+  sequence_num expect_recv[urange(client_id)]; // Mapping of clients to next
                                             // expected sequence numbers  
   int sock_fd; // The server's send/recv socket
   struct sockaddr_in addr;  // The server's IP address/port
@@ -41,21 +41,6 @@ bool server_init(server* serv, struct sockaddr_in* addr);
 void server_process_packet(server* serv, struct sockaddr_in const* ret);
 
 
-// Check if a (presumably received) packet is well-formed, setting the given
-// packet_info if interpretation succeeded (packet was well-formed)
-// XXX: The length of the packet is deduced from the (expected) length field
-// Args:
-//   raw_packet - The buffer with the raw, flattened packet data
-//   pi - The packet info for storing interpretation of the packet. If NULL,
-//        it's unused.
-// Return: True if the packet was OK, false otherwise
-// Postconditions: Argument packet_info (if non-NULL) is set to the info in 
-// the interpreted packet; as much data as possible is set, even if the packet
-// is rejected. 'code' is set to the appropriate reject code, if needed.
-// FIXME: move this to packet.h!!! so both server and client can use it; just make a function to convert from serialized to packet_info!!!
-bool server_check_packet(server* serv, uint8_t const* raw_packet, packet_info* pi, reject_code* code);
-
-
 // Send an ACK packet
 // Precondition: The server just finished processing a valid received packet
 // from 'client'.
@@ -65,7 +50,8 @@ void server_send_ack(server* serv, client_id client, struct sockaddr_in const* r
 
 
 // Send a reject (error) packet
-void server_send_reject(server* serv, client_id client, struct sockaddr_in const* ret, reject_code code);
+void server_send_reject(server* serv, packet_info const* bad_pi,
+  struct sockaddr_in const* ret, reject_code code);
 
 
 // Run the server, i.e. wait indefinitely for packets, process, and reply with
