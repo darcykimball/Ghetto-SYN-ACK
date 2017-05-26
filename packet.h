@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <sys/uio.h>
 #include <stdbool.h>
+#include <sys/socket.h>
+
+#include "closure.h"
 
 
 // Get the size of the range of an unsigned type
@@ -12,6 +15,14 @@
 #define urange(t) ((((0x1ULL << ((sizeof(t) * 8ULL) - 1ULL)) - 1ULL) | \
                     (0xFULL << ((sizeof(t) * 8ULL) - 4ULL))) + 1)
 
+
+// Declare the struct type for use as recv()'s closure environment
+DECL_STRUCT_ARGS(recv,
+  int sockfd,
+  void* buf,
+  size_t len,
+  int flags
+);
 
 
 //
@@ -119,7 +130,7 @@ int interpret_packet(void const* buf, packet_info* pi, size_t size);
 
 // Wrapper for use with busy_wait_until()
 // TODO: docs
-bool try_sendto(void* args, void* retval);
+bool try_recv(void* args, void* retval);
 
 
 #endif // PACKET_H
