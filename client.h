@@ -11,7 +11,7 @@
 
 #define MAX_SEQ_NUM  0xFF // Maximum sequence number
 #define MAX_TRIES    3    // Maximum times to try sending
-#define TIMEOUT      1    // Amount of time, in seconds, to wait for ACK
+#define TIMEOUT      3    // Amount of time, in seconds, to wait for ACK
 
 
 // Controls verbosity of client-side output

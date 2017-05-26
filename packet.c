@@ -7,6 +7,7 @@
 
 #include "packet.h"
 #include "raw_iterator.h"
+#include "closure.h"
 
 
 //
@@ -179,3 +180,33 @@ int interpret_packet(void const* buf, packet_info* pi, size_t size) {
   return 0;
 }
 
+
+bool try_sendto(void* args, void* retval) {
+  ssize_t n_sent; // For return value of sendto()
+  DECL_STRUCT_ARGS(sendto,
+    int sockfd,
+    const void* buf,
+    size_t len,
+    int flags,
+    const struct sockaddr* dest_addr,
+    socklen_t addrlen);
+  struct STRUCT_ARGS_NAME(sendto)* sargs =
+    (struct STRUCT_ARGS_NAME(sendto)*)args;
+
+  
+  // FIXME: make another fucking macro for this??? might as well at this pt!
+  n_sent = *((ssize_t*)retval) = sendto(
+      sargs->sockfd,
+      sargs->buf,
+      sargs->len,
+      sargs->flags,
+      sargs->dest_addr,
+      sargs->addrlen);
+
+  if (n_sent == -1) {
+    perror("try_sendto");
+    return false;
+  }
+
+  return true;
+}

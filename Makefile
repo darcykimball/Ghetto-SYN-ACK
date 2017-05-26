@@ -17,9 +17,9 @@ driver_server: driver_server.o shell.o raw_iterator.o packet.o server.o
 
 
 driver_client: driver_client.o shell.o raw_iterator.o packet.o client.o \
-				client_commands.o
+				client_commands.o busywait.o
 	$(CC) -o driver_client driver_client.o shell.o raw_iterator.o packet.o \
-					client.o client_commands.o $(LDFLAGS)
+					client.o client_commands.o busywait.o $(LDFLAGS)
 
 
 test_rit: test_rit.o raw_iterator.o
@@ -50,7 +50,7 @@ shell.o: shell.h shell.c
 	$(CC) $(CFLAGS) -c shell.c
 
 
-client_commands.o: client_commands.h client_commands.c
+client_commands.o: closure.h client_commands.h client_commands.c
 	$(CC) $(CFLAGS) -c client_commands.c
 
 
@@ -60,6 +60,10 @@ client.o: client.h client.c
 
 server.o: server.h server.c
 	$(CC) $(CFLAGS) -c server.c
+
+
+busywait.o: busywait.h busywait.c
+	$(CC) $(CFLAGS) -c busywait.c
 
 
 clean:

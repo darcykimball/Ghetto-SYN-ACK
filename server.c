@@ -122,9 +122,8 @@ void server_send_ack(server* serv, client_id id, struct sockaddr_in const* ret) 
     0,
     (struct sockaddr*)ret,
     sizeof(struct sockaddr_in)
-  );
+  ); 
 }
-
 
 // FIXME: factor this a bit along with send_ack???
 void server_send_reject(server* serv, packet_info const* bad_pi,
@@ -153,21 +152,28 @@ void server_send_reject(server* serv, packet_info const* bad_pi,
 // TODO
 void server_run(server* serv) {
   struct sockaddr_in client_addr; // To store client IP address
-  socklen_t addrlen; // For storing length of client address
+  socklen_t addrlen = sizeof(struct sockaddr_in); // For length of client address
+  memset(&client_addr, 0, sizeof(client_addr));
+
+  // FIXME: remove!
+  fprintf(stderr, "addrlen = %u\n", addrlen);
 
   // Wait...
-  while (true) {
-    // Get a message
-    fprintf(stderr, "server_run: Waiting for messages...\n");
-    recvfrom(serv->sock_fd, serv->recv_buf, sizeof(serv->recv_buf), 0,
-      (struct sockaddr*)&client_addr, &addrlen);
-
+  fprintf(stderr, "server_run: Waiting for messages...\n");
+  while (recvfrom(serv->sock_fd, serv->recv_buf, sizeof(serv->recv_buf), 0,
+      (struct sockaddr*)&client_addr, &addrlen))
+  {
     fprintf(stderr, "server_run: Got a packet!\n");
 
     assert(addrlen == sizeof(struct sockaddr_in)); // FIXME: remove; debug
+    assert(client_addr.sin_family == AF_INET);
 
 
     // Process and reply
+    // FIXME: Remove!! 
+    //client_addr.sin_addr.s_addr = ntohl(0);
+    
+
     server_process_packet(serv, &client_addr);
   }
 }

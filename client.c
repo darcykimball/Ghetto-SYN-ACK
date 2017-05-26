@@ -12,20 +12,17 @@
 
 
 bool client_init(client* cl, struct sockaddr_in const* addr) {
-  struct timeval timeout; // For setting recv() timeout value
-  timeout.tv_sec = TIMEOUT;
-  timeout.tv_usec = 0;
-
-
+  // Initialize address
   memset(cl, 0, sizeof(client));
   if (addr == NULL) {
     // FIXME: make more general??
     cl->addr.sin_family = AF_INET;
     cl->addr.sin_port = htons(0); // Let bind() choose a random port
-    inet_pton(AF_INET, "127.0.0.1", &cl->addr.sin_addr.s_addr);
+    //inet_pton(AF_INET, "127.0.0.1", &cl->addr.sin_addr.s_addr);
+    //inet_pton(AF_INET, "172.21.127.182", &cl->addr.sin_addr.s_addr);
 
     // FIXME: which approach??
-    //cl->addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    cl->addr.sin_addr.s_addr = htonl(INADDR_ANY);
   } else {
     memcpy(&cl->addr, addr, sizeof(struct sockaddr_in));
   }
@@ -42,11 +39,6 @@ bool client_init(client* cl, struct sockaddr_in const* addr) {
     perror("client_init: Couldn't bind address to socket!");
     return false;
   }
-
-
-  // Set timeout value for receiving
-  setsockopt(cl->sock_fd, SOL_SOCKET, SO_RCVTIMEO, 
-    (const void*)&timeout, sizeof(struct timeval));
 
 
   return true;
@@ -72,8 +64,6 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
 
   
   // Start timer and wait for ACK if data was sent
-  // FIXME: looping over tries and keeping track of tries is REDUNDANT!!
-  // FIXME: so is using a timeout! while keeping track of times!!
   if (pi->type == DATA) {
     while (true) {
       sequence_num seq_num = pi->cont.data_info.seq_num; // For readability

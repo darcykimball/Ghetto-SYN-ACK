@@ -117,4 +117,9 @@ size_t flatten(packet_info const* pi, void* buf, size_t size);
 int interpret_packet(void const* buf, packet_info* pi, size_t size);
 
 
+// Wrapper for use with busy_wait_until()
+// TODO: docs
+bool try_sendto(void* args, void* retval);
+
+
 #endif // PACKET_H
