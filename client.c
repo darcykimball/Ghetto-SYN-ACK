@@ -9,9 +9,14 @@
 
 #include "client.h"
 #include "packet.h"
+#include "busywait.h"
 
 
 bool client_init(client* cl, struct sockaddr_in const* addr) {
+ cl->timeout.tv_sec = TIMEOUT;
+ cl->timeout.tv_usec = 0;
+
+
   // Initialize address
   memset(cl, 0, sizeof(client));
   if (addr == NULL) {
@@ -64,53 +69,49 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
 
   
   // Start timer and wait for ACK if data was sent
+  // TODO/FIXME: clean up control flow!!!
   if (pi->type == DATA) {
-    while (true) {
-      sequence_num seq_num = pi->cont.data_info.seq_num; // For readability
+    sequence_num seq_num = pi->cont.data_info.seq_num; // Alias for readability
 
 
-      cl->timers[seq_num].last_sent = time(NULL);
-
+    while (cl->tries[seq_num] < MAX_TRIES) {
       // Wait...then check if timed out
       if (
-               !client_recv_packet(cl)
+               !client_recv_packet(cl) // XXX: The waiting happens here
             || !interpret_packet(cl->recv_buf, &reply_pi, sizeof(cl->recv_buf))
             || reply_pi.type != ACK
       ) {
         // Timed out or had an invalid packet; update tries and try again
-        if (++cl->timers[seq_num].tries > MAX_TRIES) {
+        if (++cl->tries[seq_num] > MAX_TRIES) {
           // Max tries reached; give up and reset info for that sequence number
           fprintf(stderr,
             "client_send_packet: Maximum tries reached! Giving up.\n");
 
-          cl->timers[seq_num].last_sent = 0;
-          cl->timers[seq_num].tries = 0;
+          cl->tries[seq_num] = 0;
 
           return;
         }
-
-
-        // Keep trying
-        continue;
+      } else {
+        // Got an ACK after all
+        fprintf(stderr,
+          "client_send_packet: Got an ACK for sequence number: %u\n",
+          pi->cont.data_info.seq_num);
+        return;
       }
-
-
-      // Got an ACK after all
-      fprintf(stderr,
-        "client_send_packet: Got an ACK for sequence number: %u\n",
-        pi->cont.data_info.seq_num);
-      return;
     }
   }
 }
 
 
 bool client_recv_packet(client* cl) {
-  if (recv(cl->sock_fd, cl->recv_buf, sizeof(cl->recv_buf), 0) == -1) {
-    perror("client_recv_packet:");
-    return false;
-  }
+  ssize_t n_recvd; // For retval of recv()
+  DEFINE_ARGS(recv, sargs,
+    cl->sock_fd,
+    cl->recv_buf,
+    sizeof(cl->recv_buf),
+    0
+  );
 
 
-  return true;
+  return busy_wait_until(cl->timeout, &try_recv, &sargs, &n_recvd);
 }

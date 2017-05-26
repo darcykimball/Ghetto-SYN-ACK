@@ -28,8 +28,7 @@ const command_pair commands[] = {
 // Helper fns
 //
 
-static void dump_timers(ack_timer* const timers);
-
+// TODO: pretty printing client info!
 
 // Send a string to some destination
 // Usage: send_string [dest_ip] [port] [string]
@@ -105,7 +104,7 @@ void dump_config(size_t argc, char** argv) {
   (void)argc;
   (void)argv;
 
-  dump_timers(the_client.timers);
+  // TODO!!
 }
 
 
@@ -113,11 +112,4 @@ void dump_config(size_t argc, char** argv) {
 // Helper fns
 //
 
-static void dump_timers(ack_timer* const timers) {
-  printf("Timers:\n");
-  for (size_t i = 0; i < MAX_SEQ_NUM; ++i) {
-    printf("timers[%lu] = (%lu, %u)\n", i,
-      timers[i].last_sent,
-      timers[i].tries);
-  }
-}
+// TODO

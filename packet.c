@@ -105,7 +105,7 @@ size_t flatten(packet_info const* pi, void* buf, size_t size) {
 }
 
 
-// FIXME: How to check for length mismatch??
+// FIXME: How to check for length mismatch?? recall: use retval of recv!!
 int interpret_packet(void const* buf, packet_info* pi, size_t size) {
   raw_iterator rit; // Raw iterator for reading buffer
   rit_init(&rit, (uint8_t*)buf, size); // XXX: no constness is OK; read only

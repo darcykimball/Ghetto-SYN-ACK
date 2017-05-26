@@ -19,19 +19,14 @@
 extern bool verbose;
 
 
-// Ack timer
-typedef struct {
-  time_t last_sent; // Time of the most recent send attempt
-                    // XXX: Not needed, but here for debugging purposes
-  uint8_t tries;   // Number of send attempts so far (max 3? FIXME)
-} ack_timer;
-
 
 // Struct for state of client
 typedef struct {
-  ack_timer timers[MAX_SEQ_NUM]; // Mapping from packet seq. numbers to ack_timer
+  size_t tries[MAX_SEQ_NUM]; // Mapping from packet seq. nums to
+                             // number of attempts so far
   int sock_fd; // The socket to use for sending
   struct sockaddr_in addr; // The client's internet address
+  struct timeval timeout; // How long wait for an ACK each try
   uint8_t send_buf[BUFSIZ]; // Buffer for preparing packets to send
   uint8_t recv_buf[BUFSIZ]; // Buffer for received packets
 } client;
@@ -51,7 +46,7 @@ bool client_init(client* cl, struct sockaddr_in const* addr);
 void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in const* dest);
 
 
-// Receive (blocking) and process packets (can only be ACKs in current context)
+// Receive with packets with timeout
 bool client_recv_packet(client* cl);
 
   
