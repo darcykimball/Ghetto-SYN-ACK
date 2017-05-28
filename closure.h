@@ -21,7 +21,9 @@
 
 
 // XXX: C99 only
-#define ARGS_LITERAL(fnname, ...) { __VA_ARGS__ }
-#define DEFINE_ARGS(fnname, sname, ...) struct STRUCT_ARGS_NAME(fnname) sname = ARGS_LITERAL(__VA_ ARGS_)
+#define ARGS_LITERAL(...) { __VA_ARGS__ }
+#define ARGS_COMPOUND_LITERAL(fnname, ...) ((fnname) { __VA_ARGS__ })
+#define DEFINE_ARGS(fnname, sname, ...) struct STRUCT_ARGS_NAME(fnname) sname = ARGS_LITERAL(__VA_ARGS__)
+
 
 #endif // CLOSURE_H

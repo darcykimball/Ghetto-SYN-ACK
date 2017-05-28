@@ -196,7 +196,7 @@ bool try_recv(void* args, void* retval) {
   );
 
   if (n_recvd == -1) {
-    perror("try_recv");
+    //perror("try_recv");
     return false;
   }
 

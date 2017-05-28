@@ -13,12 +13,10 @@
 
 
 bool client_init(client* cl, struct sockaddr_in const* addr) {
- cl->timeout.tv_sec = TIMEOUT;
- cl->timeout.tv_usec = 0;
+  memset(cl, 0, sizeof(client));
 
 
   // Initialize address
-  memset(cl, 0, sizeof(client));
   if (addr == NULL) {
     // FIXME: make more general??
     cl->addr.sin_family = AF_INET;
@@ -31,6 +29,11 @@ bool client_init(client* cl, struct sockaddr_in const* addr) {
   } else {
     memcpy(&cl->addr, addr, sizeof(struct sockaddr_in));
   }
+
+  
+  // Set timeout time
+  cl->timeout.tv_sec = 3;
+  cl->timeout.tv_usec = 0;
 
 
   // Setup the socket
@@ -81,8 +84,9 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
             || !interpret_packet(cl->recv_buf, &reply_pi, sizeof(cl->recv_buf))
             || reply_pi.type != ACK
       ) {
-        // Timed out or had an invalid packet; update tries and try again
-        if (++cl->tries[seq_num] > MAX_TRIES) {
+        // Timed out or had an invalid packet; update tries and try again 
+        fprintf(stderr, "client_send_packet: Timed out waiting for ACK, or non-ACK received!\n");
+        if (++cl->tries[seq_num] >= MAX_TRIES) {
           // Max tries reached; give up and reset info for that sequence number
           fprintf(stderr,
             "client_send_packet: Maximum tries reached! Giving up.\n");
@@ -109,7 +113,7 @@ bool client_recv_packet(client* cl) {
     cl->sock_fd,
     cl->recv_buf,
     sizeof(cl->recv_buf),
-    0
+    MSG_DONTWAIT // To return immediately when no data's there
   );
 
 
