@@ -32,7 +32,7 @@ bool client_init(client* cl, struct sockaddr_in const* addr) {
 
   
   // Set timeout time
-  cl->timeout.tv_sec = 3;
+  cl->timeout.tv_sec = 1; // FIXME: change to 3 or higher later!!
   cl->timeout.tv_usec = 0;
 
 

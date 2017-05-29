@@ -16,6 +16,9 @@ static void alert_reject(packet_info* pi, reject_code code);
 
 
 bool server_init(server* serv, struct sockaddr_in* addr) {
+  char ip_str[INET_ADDRSTRLEN]; // For printing info
+
+
   fprintf(stderr, "server_init: Initializing server...\n");
 
 
@@ -48,10 +51,12 @@ bool server_init(server* serv, struct sockaddr_in* addr) {
   memset(serv->expect_recv, 0, sizeof(serv->expect_recv));
 
 
-
   fprintf(stderr, "Done initializing!\n");
-  fprintf(stderr, "Server IP: %0x\n", serv->addr.sin_addr.s_addr);
-  fprintf(stderr, "Server port: %0x\n", serv->addr.sin_port);
+  fprintf(stderr, "Server IP: %s\n",
+    inet_ntop(AF_INET, &serv->addr.sin_addr, ip_str, INET_ADDRSTRLEN));
+  fprintf(stderr, "Server port: %0x\n", htons(serv->addr.sin_port));
+
+
   return true;
 }
 
@@ -92,7 +97,7 @@ void server_process_packet(server* serv, struct sockaddr_in const* ret) {
     fprintf(stderr, "server_run: Received message: \"%s\"\n",
       (char const*)pi.cont.data_info.payload);
     fprintf(stderr, "server_run: from %s:%u\n", inet_ntop(AF_INET,
-      ret, ip_str, sizeof(struct sockaddr_in)), ntohs(ret->sin_port));
+      &ret->sin_addr, ip_str, INET_ADDRSTRLEN), ntohs(ret->sin_port));
 
 
     // Send an ACK, and update next expected sequence number
@@ -153,6 +158,9 @@ void server_send_reject(server* serv, packet_info const* bad_pi,
 void server_run(server* serv) {
   struct sockaddr_in client_addr; // To store client IP address
   socklen_t addrlen = sizeof(struct sockaddr_in); // For length of client address
+  ssize_t n_recvd; // To hold number of bytes received
+
+
   memset(&client_addr, 0, sizeof(client_addr));
 
   // FIXME: remove!
@@ -160,10 +168,17 @@ void server_run(server* serv) {
 
   // Wait...
   fprintf(stderr, "server_run: Waiting for messages...\n");
-  while (recvfrom(serv->sock_fd, serv->recv_buf, sizeof(serv->recv_buf), 0,
-      (struct sockaddr*)&client_addr, &addrlen))
+  while ((n_recvd =
+    recvfrom(serv->sock_fd, serv->recv_buf, sizeof(serv->recv_buf), 0,
+      (struct sockaddr*)&client_addr, &addrlen)))
   {
-    fprintf(stderr, "server_run: Got a packet!\n");
+    if (n_recvd == -1) {
+      perror("server_run: recvfrom() failed");
+      continue;
+    }
+
+
+    fprintf(stderr, "server_run: Got a packet: %ld bytes!\n", n_recvd);
 
     assert(addrlen == sizeof(struct sockaddr_in)); // FIXME: remove; debug
     assert(client_addr.sin_family == AF_INET);

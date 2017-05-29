@@ -40,6 +40,7 @@ void send_string(size_t argc, char** argv) {
                         // but in this allows explicit out-of-sequence sends
   struct addrinfo* aip; // For parsing address/port
   int gai_retval; // For return value of getaddressinfo()
+  char ip_str[INET_ADDRSTRLEN]; // For message printing
 
 
   // Check for and validate arguments
@@ -91,9 +92,9 @@ void send_string(size_t argc, char** argv) {
 
   
   // Send
-  fprintf(stderr, "Sending to IP %0x, port %x\n",
-    dest_addr.sin_addr.s_addr,
-    dest_addr.sin_port);
+  fprintf(stderr, "Sending to IP %s, port %x\n",
+    inet_ntop(AF_INET, &dest_addr.sin_addr, ip_str, INET_ADDRSTRLEN),
+    ntohs(dest_addr.sin_port));
 
   client_send_packet(&the_client, &pi, &dest_addr);
 }
