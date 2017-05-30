@@ -25,6 +25,7 @@ typedef struct {
   struct sockaddr_in addr;  // The server's IP address/port
   uint8_t send_buf[BUFSIZ]; // Buffer for packets to be sent
   uint8_t recv_buf[BUFSIZ]; // Buffer for received packets
+  size_t last_recvd_len;    // Size of last received packet (inside recv_buf)
 } server;
 
 
@@ -37,8 +38,16 @@ typedef struct {
 bool server_init(server* serv, struct sockaddr_in* addr);
 
 
-// Process a received packet
+// Process a received packet; validate and send ACK as necessary
 void server_process_packet(server* serv, struct sockaddr_in const* ret);
+
+
+// Validate a received packet
+// PRECONDITION: Server has just received a packet and has filled member
+// recv_buf with its contents
+// Return value: 0 if everything was OK; an (castable to reject_code)
+// appropriate error code otherwise
+int server_check_packet(server* serv, packet_info* pi);
 
 
 // Send an ACK packet

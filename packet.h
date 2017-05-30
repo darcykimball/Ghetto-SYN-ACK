@@ -30,10 +30,6 @@ DECL_STRUCT_ARGS(recv,
 //
 
 
-// FIXME: should these be defined elsewhere/differently???
-extern const unsigned MAX_IOVEC_LEN;
-
-
 extern const uint16_t PACKET_START; // Start of packet identifier
 extern const uint16_t PACKET_END;   // End of packet identifier
 
@@ -54,7 +50,8 @@ typedef enum {         // The received packet was rejected because...
   OUT_OF_SEQ = 0xFFF4, // Out of sequence
   BAD_LEN    = 0xFFF5, // Length field mismatches payload length
   NO_END     = 0xFFF6, // No 'end of packet' OR 'start of packet' ID
-  DUP_PACK   = 0xFFF7, // This was a duplicate (already received before)
+  DUP_PACK   = 0xFFF7, // This was a duplicate (already received before, i.e.
+                       // the expected sequence number is greater than received
   BAD_TYPE   = 0xFFF8  // XXX: This is extra, but it seemed necessary
 } reject_code;
 

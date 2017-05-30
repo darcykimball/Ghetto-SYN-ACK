@@ -65,26 +65,12 @@ bool server_init(server* serv, struct sockaddr_in* addr) {
 // Process a received packet
 void server_process_packet(server* serv, struct sockaddr_in const* ret) {
   packet_info pi; // For storing interpreted packet
-  int code; // For return value of interpret_packet()
+  int code; // For return value of server_check_packet()
   char ip_str[INET_ADDRSTRLEN]; // For pretty-printing addresses
 
 
-  // Check the packet for errors
-  code = interpret_packet(serv->recv_buf, &pi, sizeof(serv->recv_buf));
-
-
-  // Check for additional errors
-  if (code == 0) {
-    // Check sequence number
-    // FIXME: special case: both zero -> overflow!...or will it wrap around??
-    if (pi.cont.data_info.seq_num != serv->expect_recv[pi.id]) {
-      if (pi.cont.data_info.seq_num  == (serv->expect_recv[pi.id] - 1)) {
-        code = DUP_PACK;
-      } else {
-        code = OUT_OF_SEQ;
-      }
-    }
-  }
+  // Validate
+  code = server_check_packet(serv, &pi);
 
 
   // Notify of any errors if present
@@ -94,6 +80,7 @@ void server_process_packet(server* serv, struct sockaddr_in const* ret) {
     // Reply to client with reject message
     fprintf(stderr, "server_run: Sending REJECT message\n");
     server_send_reject(serv, &pi, ret, (reject_code)code);
+
   } else { // All is well
     fprintf(stderr, "server_run: Received message: \"%s\"\n",
       (char const*)pi.cont.data_info.payload);
@@ -209,12 +196,55 @@ void server_run(server* serv) {
 
 
     // Process and reply
-    // FIXME: Remove!! 
-    //client_addr.sin_addr.s_addr = ntohl(0);
-    
-
+    serv->last_recvd_len = n_recvd;
     server_process_packet(serv, &client_addr);
   }
+}
+
+
+int server_check_packet(server* serv, packet_info* pi) {
+  // Read and check the packet for errors
+  int code = interpret_packet(serv->recv_buf, pi, sizeof(serv->recv_buf));
+
+
+  // Check for invalid length field: does the raw packet end on the expected
+  // boundary?
+  uint8_t* payload_end =
+    serv->recv_buf
+      + sizeof(PACKET_START)
+      + sizeof(client_id)
+      + sizeof(uint16_t) // XXX: packet type
+      + sizeof(sequence_num)
+      + sizeof(payload_len)
+      + pi->cont.data_info.len;
+  uint8_t* expected_payload_end =
+    serv->recv_buf + serv->last_recvd_len - sizeof(PACKET_END);
+
+  // FIXME: remove!!
+  fprintf(stderr, "last_recvd_len = %lu\n", serv->last_recvd_len);
+  fprintf(stderr, "payload_end, expected_payload_end = %p, %p\n",
+    payload_end, expected_payload_end);
+  
+  if (payload_end != expected_payload_end) {
+    return BAD_LEN;
+  }
+
+
+  // Check for additional errors
+  if (code == 0) {
+    // Check sequence number
+    // FIXME: special case: both zero -> overflow!...or will it wrap around??
+    if (pi->cont.data_info.seq_num != serv->expect_recv[pi->id]) {
+      if (pi->cont.data_info.seq_num > serv->expect_recv[pi->id]) {
+        return OUT_OF_SEQ;
+      } else {
+        return DUP_PACK;
+      }
+    }
+  }
+
+
+  return code; 
 }
 
 

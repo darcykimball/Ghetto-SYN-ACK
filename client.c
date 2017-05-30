@@ -118,7 +118,7 @@ bool client_recv_packet(client* cl) {
   (void)sargs;
 
     
-  n_recvd = recv(cl->sock_fd, cl->recv_buf, sizeof(cl->recv_buf), 0);
+  //n_recvd = recv(cl->sock_fd, cl->recv_buf, sizeof(cl->recv_buf), 0);
 
   // FIXME: remove!
   //if (n_recvd == -1) {
