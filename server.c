@@ -32,6 +32,7 @@ bool server_init(server* serv, struct sockaddr_in* addr) {
   // Fill in with default address if needed
   if (addr == NULL) {
     memset(&serv->addr, 0, sizeof(serv->addr));
+    serv->addr.sin_family = AF_INET;
     serv->addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv->addr.sin_port = htons(DEFAULT_PORT);
   } else {
@@ -40,8 +41,8 @@ bool server_init(server* serv, struct sockaddr_in* addr) {
 
 
   // Bind the socket
-  if (bind(serv->sock_fd, (struct sockaddr*)&serv->addr,
-        sizeof(struct sockaddr_in)) == -1) {
+  if ((bind(serv->sock_fd, (struct sockaddr*)&serv->addr,
+        sizeof(struct sockaddr_in)) == -1)) {
     perror("server_init: Couldn't bind socket to address");
     return false;
   }
@@ -54,7 +55,7 @@ bool server_init(server* serv, struct sockaddr_in* addr) {
   fprintf(stderr, "Done initializing!\n");
   fprintf(stderr, "Server IP: %s\n",
     inet_ntop(AF_INET, &serv->addr.sin_addr, ip_str, INET_ADDRSTRLEN));
-  fprintf(stderr, "Server port: %0x\n", htons(serv->addr.sin_port));
+  fprintf(stderr, "Server port: %u\n", ntohs(serv->addr.sin_port));
 
 
   return true;
@@ -111,6 +112,9 @@ void server_process_packet(server* serv, struct sockaddr_in const* ret) {
 
 // TODO
 void server_send_ack(server* serv, client_id id, struct sockaddr_in const* ret) {
+  char ip_str[INET_ADDRSTRLEN]; // For msg printing
+
+
   packet_info pi;
   pi.type = ACK;
   pi.id = id;
@@ -120,6 +124,13 @@ void server_send_ack(server* serv, client_id id, struct sockaddr_in const* ret) 
 
   size_t flattened_len = flatten(&pi, serv->send_buf, sizeof(serv->send_buf));
   // FIXME: check number of sent bytes???
+  // FIXME: remove!!
+  
+  fprintf(stderr, "server_send_ack: Sending ACK to %s:%u\n",
+    inet_ntop(AF_INET,
+    &ret->sin_addr, ip_str, INET_ADDRSTRLEN), ntohs(ret->sin_port));
+
+  ssize_t retval = 
   sendto(
     serv->sock_fd,
     serv->send_buf,
@@ -128,6 +139,19 @@ void server_send_ack(server* serv, client_id id, struct sockaddr_in const* ret) 
     (struct sockaddr*)ret,
     sizeof(struct sockaddr_in)
   ); 
+
+  // FIXME: remove!
+  sendto(
+    serv->sock_fd,
+    serv->send_buf,
+    flattened_len,
+    0,
+    (struct sockaddr*)ret,
+    sizeof(struct sockaddr_in)
+  ); 
+
+  // FIXME: remove!!
+  fprintf(stderr, "sendto() returned %ld\n", retval);
 }
 
 // FIXME: factor this a bit along with send_ack???
@@ -170,7 +194,7 @@ void server_run(server* serv) {
   fprintf(stderr, "server_run: Waiting for messages...\n");
   while ((n_recvd =
     recvfrom(serv->sock_fd, serv->recv_buf, sizeof(serv->recv_buf), 0,
-      (struct sockaddr*)&client_addr, &addrlen)))
+      (struct sockaddr*)&client_addr, &addrlen))) // FIXME: this implicitly exits upon receiving a 0-byte packet!!
   {
     if (n_recvd == -1) {
       perror("server_run: recvfrom() failed");

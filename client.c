@@ -21,11 +21,11 @@ bool client_init(client* cl, struct sockaddr_in const* addr) {
     // FIXME: make more general??
     cl->addr.sin_family = AF_INET;
     cl->addr.sin_port = htons(0); // Let bind() choose a random port
-    //inet_pton(AF_INET, "127.0.0.1", &cl->addr.sin_addr.s_addr);
-    //inet_pton(AF_INET, "172.21.127.182", &cl->addr.sin_addr.s_addr);
+    inet_pton(AF_INET, "127.0.0.1", &cl->addr.sin_addr.s_addr);
+    //inet_pton(AF_INET, "10.0.0.208", &cl->addr.sin_addr.s_addr);
 
     // FIXME: which approach??
-    cl->addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    //cl->addr.sin_addr.s_addr = htonl(INADDR_ANY);
   } else {
     memcpy(&cl->addr, addr, sizeof(struct sockaddr_in));
   }
@@ -80,9 +80,9 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
     while (cl->tries[seq_num] < MAX_TRIES) {
       // Wait...then check if timed out
       if (
-               !client_recv_packet(cl) // XXX: The waiting happens here
-            || !interpret_packet(cl->recv_buf, &reply_pi, sizeof(cl->recv_buf))
-            || reply_pi.type != ACK
+         !client_recv_packet(cl) // XXX: The waiting happens here
+      || interpret_packet(cl->recv_buf, &reply_pi, sizeof(cl->recv_buf)) != 0
+      || reply_pi.type != ACK
       ) {
         // Timed out or had an invalid packet; update tries and try again 
         fprintf(stderr, "client_send_packet: Timed out waiting for ACK, or non-ACK received!\n");
@@ -115,7 +115,19 @@ bool client_recv_packet(client* cl) {
     sizeof(cl->recv_buf),
     MSG_DONTWAIT // To return immediately when no data's there
   );
+  (void)sargs;
 
+    
+  n_recvd = recv(cl->sock_fd, cl->recv_buf, sizeof(cl->recv_buf), 0);
 
+  // FIXME: remove!
+  //if (n_recvd == -1) {
+  //  perror("client_recv_packet: recv failed");
+  //  return false;
+  //}
+
+  //return true;
+
+  // FIXME: reinstate!
   return busy_wait_until(cl->timeout, &try_recv, &sargs, &n_recvd);
 }
