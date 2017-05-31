@@ -93,7 +93,6 @@ void server_process_packet(server* serv, struct sockaddr_in const* ret) {
 }
 
 
-// TODO
 void server_send_ack(server* serv, client_id id, struct sockaddr_in const* ret) {
   char ip_str[INET_ADDRSTRLEN]; // For msg printing
 
