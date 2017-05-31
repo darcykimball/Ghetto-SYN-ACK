@@ -11,10 +11,6 @@
 #include "packet.h"
 
 
-// Helper fns
-static void alert_reject(packet_info* pi, reject_code code);
-
-
 bool server_init(server* serv, struct sockaddr_in* addr) {
   char ip_str[INET_ADDRSTRLEN]; // For printing info
 
@@ -245,29 +241,4 @@ int server_check_packet(server* serv, packet_info* pi) {
 
 
   return code; 
-}
-
-
-static void alert_reject(packet_info* pi, reject_code code) {
-  // Print out errors server-side
-  fprintf(stderr, "server_process_packet: From client %d:\n", pi->id);
-  switch (code) {
-    case NO_END:
-      fprintf(stderr, "server_process_packet: No packet terminator\n");
-      break;
-    case DUP_PACK:
-      fprintf(stderr, "server_process_packet: Received duplicate\n"); 
-      break;
-    case OUT_OF_SEQ:
-      fprintf(stderr, "server_process_packet: Received out of sequence!\n");
-      break;
-    case BAD_TYPE:
-      fprintf(stderr, "server_process_packet: Bad type field!\n");
-      break;
-    case BAD_LEN:
-      fprintf(stderr, "server_process_packet: Bad length field!\n");
-      break;
-    default:
-      fprintf(stderr, "server_process_packet: Unrecognized reject code...\n");
-  }
 }

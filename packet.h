@@ -130,4 +130,8 @@ int interpret_packet(void const* buf, packet_info* pi, size_t size);
 bool try_recv(void* args, void* retval);
 
 
+// Utility function for printing reject error messages
+void alert_reject(packet_info const* pi, reject_code code);
+
+
 #endif // PACKET_H

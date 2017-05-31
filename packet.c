@@ -202,3 +202,29 @@ bool try_recv(void* args, void* retval) {
 
   return true;
 }
+
+
+void alert_reject(packet_info const* pi, reject_code code) {
+    // Print out errors server-side
+    fprintf(stderr, " From client %d:\n", pi->id);
+    switch (code) {
+      case NO_END:
+        fprintf(stderr, " No packet terminator\n");
+        break;
+      case DUP_PACK:
+        fprintf(stderr, " Received duplicate\n");
+        break;
+      case OUT_OF_SEQ:
+        fprintf(stderr, " Received out of sequence!\n");
+        break;
+      case BAD_TYPE:
+        fprintf(stderr, " Bad type field!\n");
+        break;
+      case BAD_LEN:
+        fprintf(stderr, " Bad length field!\n");
+        break;
+      default:
+        fprintf(stderr, " Unrecognized reject code...\n");
+    }
+}
+

@@ -61,7 +61,6 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
   // Serialize packet data
   raw_len = flatten(pi, cl->send_buf, sizeof(cl->send_buf));
 
-
   
   // Send
   if (sendto(cl->sock_fd, cl->send_buf, raw_len, 0,
@@ -73,34 +72,51 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
   
   // Start timer and wait for ACK if data was sent
   // TODO/FIXME: clean up control flow!!!
-  if (pi->type == DATA) {
     sequence_num seq_num = pi->cont.data_info.seq_num; // Alias for readability
 
+  while (true) {
+    // Wait...then check if timed out
+    if (!client_recv_packet(cl)) {
+      // Timed out; try again
+      fprintf(stderr, "client_send_packet: Timed out waiting for ACK!\n");
 
-    while (cl->tries[seq_num] < MAX_TRIES) {
-      // Wait...then check if timed out
-      if (
-         !client_recv_packet(cl) // XXX: The waiting happens here
-      || interpret_packet(cl->recv_buf, &reply_pi, sizeof(cl->recv_buf)) != 0
-      || reply_pi.type != ACK
-      ) {
-        // Timed out or had an invalid packet; update tries and try again 
-        fprintf(stderr, "client_send_packet: Timed out waiting for ACK, or non-ACK received!\n");
-        if (++cl->tries[seq_num] >= MAX_TRIES) {
-          // Max tries reached; give up and reset info for that sequence number
-          fprintf(stderr,
-            "client_send_packet: Maximum tries reached! Giving up.\n");
-
-          cl->tries[seq_num] = 0;
-
-          return;
-        }
-      } else {
-        // Got an ACK after all
+      if (++cl->tries[seq_num] >= MAX_TRIES) {
+        // Max tries reached; give up and reset info for that sequence number
         fprintf(stderr,
-          "client_send_packet: Got an ACK for sequence number: %u\n",
-          pi->cont.data_info.seq_num);
+          "client_send_packet: Maximum tries reached! Giving up.\n");
+
+        cl->tries[seq_num] = 0;
+
         return;
+      }
+
+    } else if (
+        interpret_packet(cl->recv_buf, &reply_pi, sizeof(cl->recv_buf)) != 0
+      )
+    {
+      // Invalid packet
+      fprintf(stderr,
+        "client_send_packet: Received invalid reply! Retrying..\n");
+
+      continue;
+
+    } else {
+      switch(reply_pi.type) {
+        case ACK:
+          // Got an ACK after all
+          fprintf(stderr,
+            "client_send_packet: Got an ACK for sequence number: %u\n",
+            pi->cont.data_info.seq_num);
+      return;
+      
+        case REJECT:  
+          fprintf(stderr, "client_send_packet");
+          alert_reject(pi, reply_pi.cont.reject_info.code);
+          continue;
+        default:
+          fprintf(stderr,
+            "client_send_packet: Received non-ACK, non-REJECT packet!\n");
+          continue;
       }
     }
   }
