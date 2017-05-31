@@ -12,7 +12,7 @@
 #include "busywait.h"
 
 
-bool client_init(client* cl, struct sockaddr_in const* addr) {
+bool client_init(client* cl, struct sockaddr_in const* addr, client_id id) {
   memset(cl, 0, sizeof(client));
 
 
@@ -30,6 +30,10 @@ bool client_init(client* cl, struct sockaddr_in const* addr) {
   //cl->timeout.tv_sec = TIMEOUT; // FIXME reinstate!!
   cl->timeout.tv_sec = 1;
   cl->timeout.tv_usec = 0;
+
+
+  // Set ID
+  cl->id = id;
 
 
   // Setup the socket

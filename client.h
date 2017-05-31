@@ -23,6 +23,7 @@ typedef struct {
   struct timeval timeout; // How long wait for an ACK each try
   uint8_t send_buf[BUFSIZ]; // Buffer for preparing packets to send
   uint8_t recv_buf[BUFSIZ]; // Buffer for received packets
+  client_id id;             // The client's ID
 } client;
 
 
@@ -30,9 +31,10 @@ typedef struct {
 // Args:
 //   cl - The client object
 //   addr - A desired address to use; if NULL, INADDR_ANY is used 
+//   id - The client's ID
 // Postcondition: The passed-in client is initialized with socket/address/timers
 // Return value: true if everything was OK, false if not able to initialize
-bool client_init(client* cl, struct sockaddr_in const* addr);
+bool client_init(client* cl, struct sockaddr_in const* addr, client_id id);
 
 
 // Send a packet using the specified socket, timing out and retrying as

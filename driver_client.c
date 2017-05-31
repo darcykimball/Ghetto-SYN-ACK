@@ -8,18 +8,25 @@
 
 
 client the_client; // The single, global client instance
-client_id id; // The client ID for this session TODO
+
+int main(int argc, char** argv) {
+  client_id id; // To be read in as arg
 
 
-int main() {
+  // Parse cmd line...
+  if (argc != 2) {
+    fprintf(stderr, "Usage: %s [client_id]\n", argv[0]);
+    exit(1);
+  }
+  id = strtol(argv[1], NULL, 10);
+
+
   // Setup the client (configuration)
-  if (!client_init(&the_client, NULL)) {
+  if (!client_init(&the_client, NULL, id)) {
     fprintf(stderr, "Unable to start client! Exiting...\n");
     exit(1);
   }
 
-  // Initialize ID
-  id = 11;
 
   // Start the shell
   loop(commands, N_COMMANDS);

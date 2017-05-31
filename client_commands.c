@@ -65,14 +65,14 @@ void send_string(size_t argc, char** argv) {
    
   // Construct the packet
   pi.type = DATA;
-  pi.id = id;
+  pi.id = the_client.id;
   pi.cont.data_info.seq_num = seq_num;
   pi.cont.data_info.len = strlen(argv[4]) + 1; // XXX: Send the null byte too
   pi.cont.data_info.payload = argv[4];
 
   
   // Send
-  fprintf(stderr, "Sending to IP %s, port %x\n",
+  fprintf(stderr, "Sending to IP %s, port %u\n",
     inet_ntop(AF_INET, &dest_addr.sin_addr, ip_str, INET_ADDRSTRLEN),
     ntohs(dest_addr.sin_port));
 

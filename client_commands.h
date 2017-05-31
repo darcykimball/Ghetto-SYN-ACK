@@ -17,10 +17,6 @@ extern client the_client;
 extern const command_pair commands[];
 
 
-// The client ID for this session
-extern client_id id;
-
-
 //
 // Client shell commands
 //
