@@ -85,5 +85,15 @@ void dump_config(size_t argc, char** argv) {
   (void)argc;
   (void)argv;
 
-  // TODO!!
+
+  char ip_str[INET_ADDRSTRLEN];
+
+  fprintf(stderr,
+    "Client IP: %s\nClient Port: %u\nClient ID: %u Client Socket: %d\n",
+      inet_ntop(AF_INET, &the_client.addr.sin_addr.s_addr, ip_str,
+        INET_ADDRSTRLEN),
+      ntohs(the_client.addr.sin_port),
+      the_client.id,
+      the_client.sock_fd);
+
 }
