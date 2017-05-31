@@ -24,7 +24,7 @@ const command_pair commands[] = {
 
 
 // Helper for parsing IP/port/sequence number
-void parse_ip_args(char** argv, struct sockaddr_in* dest_addr, sequence_num* seq_num) {
+static bool parse_ip_args(char** argv, struct sockaddr_in* dest_addr, sequence_num* seq_num) {
   char* end = NULL; // For parsing port number
   struct addrinfo* aip; // For parsing address/port
   int gai_retval; // For return value of getaddressinfo()
@@ -37,7 +37,7 @@ void parse_ip_args(char** argv, struct sockaddr_in* dest_addr, sequence_num* seq
     }
 
     fprintf(stderr, "parse_ip_args: %s\n", gai_strerror(gai_retval));
-    return;
+    return false;
   }
 
   assert(aip->ai_addrlen == sizeof(struct sockaddr_in));
@@ -50,8 +50,11 @@ void parse_ip_args(char** argv, struct sockaddr_in* dest_addr, sequence_num* seq
   *seq_num = strtoul(argv[3], &end, 10);
   if (end == argv[3] || *end != '\0') {
     SHELL_ERROR("parse_ip_args: Invalid sequence number!");
-    return;
+    return false;
   }
+
+
+  return true;
 }
 
 
@@ -69,7 +72,9 @@ void send_string(size_t argc, char** argv) {
     return;
   }
 
-  parse_ip_args(argv, &dest_addr, &seq_num);
+  if (!parse_ip_args(argv, &dest_addr, &seq_num)) {
+    return;
+  }
   
    
   // Construct the packet

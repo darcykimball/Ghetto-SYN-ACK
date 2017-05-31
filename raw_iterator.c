@@ -38,5 +38,5 @@ static void check_bounds(raw_iterator* rit, size_t n) {
   // Bounds check
   ptrdiff_t bounds_diff = (rit->curr + n) - rit->data;
 
-  assert(bounds_diff < rit->size);
+  assert(bounds_diff <= rit->size);
 }
