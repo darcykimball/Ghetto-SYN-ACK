@@ -15,23 +15,12 @@
 #include "client.h"
 
 
-#define SHELL_ERROR(errmsg) fprintf(stderr, "%s\n", (errmsg));
-
-
 const command_pair commands[] = {
   { "dump_config", &dump_config },
   { "send_string", &send_string },
 };
 
 
-//
-// Helper fns
-//
-
-// TODO: pretty printing client info!
-
-// Send a string to some destination
-// Usage: send_string [dest_ip] [port] [string]
 void send_string(size_t argc, char** argv) {
   struct sockaddr_in dest_addr; // To hold the destination address
   char* end = NULL; // For parsing port number
@@ -50,8 +39,7 @@ void send_string(size_t argc, char** argv) {
   }
 
 
-  // FIXME: not safe if IPv6...
-  // TODO: debug/print!!
+  // XXX: not safe if IPv6...
   if ((gai_retval = getaddrinfo(argv[1], argv[2], NULL, &aip))) {
     if (gai_retval == EAI_SYSTEM) {
       perror("send_string");
@@ -66,16 +54,8 @@ void send_string(size_t argc, char** argv) {
   dest_addr = *(struct sockaddr_in*)(aip->ai_addr);
   freeaddrinfo(aip);
 
-  //inet_pton(AF_INET, argv[1], &dest_addr.sin_addr);
 
-  //dest_addr.sin_family = AF_INET;
-  //dest_addr.sin_port = htons(strtoul(argv[2], &end, 10)); // FIXME dangerous??
-  //if (end == argv[2] || *end != '\0') {
-  //  SHELL_ERROR("send_string: Invalid port number!");
-  //  return;
-  //}
-
-
+  // Validate seq_num param
   seq_num = strtoul(argv[3], &end, 10);
   if (end == argv[3] || *end != '\0') {
     SHELL_ERROR("send_string: Invalid sequence number!");
@@ -107,10 +87,3 @@ void dump_config(size_t argc, char** argv) {
 
   // TODO!!
 }
-
-
-//
-// Helper fns
-//
-
-// TODO

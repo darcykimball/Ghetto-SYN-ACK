@@ -14,12 +14,6 @@
 #define TIMEOUT      3    // Amount of time, in seconds, to wait for ACK
 
 
-// Controls verbosity of client-side output
-// FIXME: pass as param??
-extern bool verbose;
-
-
-
 // Struct for state of client
 typedef struct {
   size_t tries[MAX_SEQ_NUM]; // Mapping from packet seq. nums to

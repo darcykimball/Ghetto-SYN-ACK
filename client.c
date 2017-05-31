@@ -18,21 +18,17 @@ bool client_init(client* cl, struct sockaddr_in const* addr) {
 
   // Initialize address
   if (addr == NULL) {
-    // FIXME: make more general??
     cl->addr.sin_family = AF_INET;
     cl->addr.sin_port = htons(0); // Let bind() choose a random port
-    inet_pton(AF_INET, "127.0.0.1", &cl->addr.sin_addr.s_addr);
-    //inet_pton(AF_INET, "10.0.0.208", &cl->addr.sin_addr.s_addr);
-
-    // FIXME: which approach??
-    //cl->addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    cl->addr.sin_addr.s_addr = htonl(INADDR_ANY);
   } else {
     memcpy(&cl->addr, addr, sizeof(struct sockaddr_in));
   }
 
   
   // Set timeout time
-  cl->timeout.tv_sec = 1; // FIXME: change to 3 or higher later!!
+  //cl->timeout.tv_sec = TIMEOUT; // FIXME reinstate!!
+  cl->timeout.tv_sec = 1;
   cl->timeout.tv_usec = 0;
 
 
@@ -71,7 +67,6 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
 
   
   // Start timer and wait for ACK if data was sent
-  // TODO/FIXME: clean up control flow!!!
     sequence_num seq_num = pi->cont.data_info.seq_num; // Alias for readability
 
   while (true) {
@@ -102,21 +97,21 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
 
     } else {
       switch(reply_pi.type) {
+        case REJECT:  
+          fprintf(stderr, "client_send_packet: Received REJECT message!");
+          alert_reject(pi, reply_pi.cont.reject_info.code);
+          continue;
+
         case ACK:
           // Got an ACK after all
           fprintf(stderr,
             "client_send_packet: Got an ACK for sequence number: %u\n",
             pi->cont.data_info.seq_num);
-      return;
-      
-        case REJECT:  
-          fprintf(stderr, "client_send_packet");
-          alert_reject(pi, reply_pi.cont.reject_info.code);
-          continue;
+          return;
+
         default:
           fprintf(stderr,
             "client_send_packet: Received non-ACK, non-REJECT packet!\n");
-          continue;
       }
     }
   }
@@ -133,17 +128,6 @@ bool client_recv_packet(client* cl) {
   );
   (void)sargs;
 
-    
-  //n_recvd = recv(cl->sock_fd, cl->recv_buf, sizeof(cl->recv_buf), 0);
 
-  // FIXME: remove!
-  //if (n_recvd == -1) {
-  //  perror("client_recv_packet: recv failed");
-  //  return false;
-  //}
-
-  //return true;
-
-  // FIXME: reinstate!
   return busy_wait_until(cl->timeout, &try_recv, &sargs, &n_recvd);
 }

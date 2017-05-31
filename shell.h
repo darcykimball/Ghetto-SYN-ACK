@@ -7,6 +7,8 @@
 
 #define MAX_CMD_LEN 16
 
+#define SHELL_ERROR(errmsg) fprintf(stderr, "%s\n", (errmsg));
+
 
 extern bool echo; // Flag for echoing commands entered
 

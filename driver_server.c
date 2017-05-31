@@ -20,7 +20,10 @@ int main() {
   serv_addr.sin_port = htons(DEFAULT_PORT);
   serv_addr.sin_addr.s_addr = INADDR_ANY;
   
-  server_init(&serv, &serv_addr);
+  if (!server_init(&serv, &serv_addr)) {
+    fprintf(stderr, "Failed to initialize server! Exiting...\n");
+    exit(1);
+  }
 
 
   // Run...

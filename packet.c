@@ -20,8 +20,6 @@ const uint16_t PACKET_START = 0xFFFF;
 const uint16_t PACKET_END = 0xFFFF;
 
 
-// TODO
-// FIXME: network order!!!
 size_t flatten(packet_info const* pi, void* buf, size_t size) {
   raw_iterator rit; // For writing to buffer
   rit_init(&rit, (uint8_t*)buf, size);
@@ -105,7 +103,6 @@ size_t flatten(packet_info const* pi, void* buf, size_t size) {
 }
 
 
-// FIXME: How to check for length mismatch?? recall: use retval of recv!!
 int interpret_packet(void const* buf, packet_info* pi, size_t size) {
   raw_iterator rit; // Raw iterator for reading buffer
   rit_init(&rit, (uint8_t*)buf, size); // XXX: no constness is OK; read only
@@ -143,7 +140,7 @@ int interpret_packet(void const* buf, packet_info* pi, size_t size) {
 
       // Payload; save ptr to it and skip over
       pi->cont.data_info.payload = rit.curr;
-      rit.curr += pi->cont.data_info.len; // FIXME: use a method??
+      rit.curr += pi->cont.data_info.len;
         
       break;
 
@@ -183,11 +180,9 @@ int interpret_packet(void const* buf, packet_info* pi, size_t size) {
 
 bool try_recv(void* args, void* retval) {
   ssize_t n_recvd; // For return value of recv()
-  struct STRUCT_ARGS_NAME(recv)* sargs =
-    (struct STRUCT_ARGS_NAME(recv)*)args;
+  struct STRUCT_ARGS_NAME(recv)* sargs = (struct STRUCT_ARGS_NAME(recv)*)args;
 
   
-  // FIXME: make another fucking macro for this??? might as well at this pt!
   n_recvd = *((ssize_t*)retval) = recv(
       sargs->sockfd,
       sargs->buf,
@@ -206,25 +201,25 @@ bool try_recv(void* args, void* retval) {
 
 void alert_reject(packet_info const* pi, reject_code code) {
     // Print out errors server-side
-    fprintf(stderr, " From client %d:\n", pi->id);
+    fprintf(stderr, " From client %d: ", pi->id);
     switch (code) {
       case NO_END:
-        fprintf(stderr, " No packet terminator\n");
+        fprintf(stderr, "No packet terminator\n");
         break;
       case DUP_PACK:
-        fprintf(stderr, " Received duplicate\n");
+        fprintf(stderr, "Received duplicate\n");
         break;
       case OUT_OF_SEQ:
-        fprintf(stderr, " Received out of sequence!\n");
+        fprintf(stderr, "Received out of sequence!\n");
         break;
       case BAD_TYPE:
-        fprintf(stderr, " Bad type field!\n");
+        fprintf(stderr, "Bad type field!\n");
         break;
       case BAD_LEN:
-        fprintf(stderr, " Bad length field!\n");
+        fprintf(stderr, "Bad length field!\n");
         break;
       default:
-        fprintf(stderr, " Unrecognized reject code...\n");
+        fprintf(stderr, "Unrecognized reject code...\n");
     }
 }
 
