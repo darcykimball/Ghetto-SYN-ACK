@@ -71,7 +71,7 @@ void client_send_packet(client* cl, packet_info const* pi, struct sockaddr_in co
 
   
   // Start timer and wait for ACK if data was sent
-    sequence_num seq_num = pi->cont.data_info.seq_num; // Alias for readability
+  sequence_num seq_num = pi->cont.data_info.seq_num; // Alias for readability
 
   while (true) {
     // Wait...then check if timed out

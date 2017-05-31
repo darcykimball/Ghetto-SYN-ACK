@@ -134,4 +134,8 @@ bool try_recv(void* args, void* retval);
 void alert_reject(packet_info const* pi, reject_code code);
 
 
+// Dump packet for debugging
+void dump_packet(packet_info const* pi);
+
+
 #endif // PACKET_H

@@ -6,7 +6,7 @@
 #include "client.h"
 
 
-#define N_COMMANDS 2
+#define N_COMMANDS 3
 
 
 // The single client instance
@@ -30,6 +30,10 @@ void send_string(size_t argc, char** argv);
 // Dump the current client configuration
 // Usage: dump_config
 void dump_config(size_t, char**);
+
+
+// Send an invalid packet
+void send_bs(size_t argc, char** argv);
 
 
 #endif // CLIENT_COMMANDS_H

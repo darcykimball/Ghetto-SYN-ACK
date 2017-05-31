@@ -15,20 +15,51 @@
 #include "client.h"
 
 
+// Command map
 const command_pair commands[] = {
   { "dump_config", &dump_config },
   { "send_string", &send_string },
+  { "send_bs", &send_bs },
 };
+
+
+// Helper for parsing IP/port/sequence number
+void parse_ip_args(char** argv, struct sockaddr_in* dest_addr, sequence_num* seq_num) {
+  char* end = NULL; // For parsing port number
+  struct addrinfo* aip; // For parsing address/port
+  int gai_retval; // For return value of getaddressinfo()
+
+
+  // XXX: not safe if IPv6...
+  if ((gai_retval = getaddrinfo(argv[1], argv[2], NULL, &aip))) {
+    if (gai_retval == EAI_SYSTEM) {
+      perror("parse_ip_args");
+    }
+
+    fprintf(stderr, "parse_ip_args: %s\n", gai_strerror(gai_retval));
+    return;
+  }
+
+  assert(aip->ai_addrlen == sizeof(struct sockaddr_in));
+
+  *dest_addr = *(struct sockaddr_in*)(aip->ai_addr);
+  freeaddrinfo(aip);
+
+
+  // Validate seq_num param
+  *seq_num = strtoul(argv[3], &end, 10);
+  if (end == argv[3] || *end != '\0') {
+    SHELL_ERROR("parse_ip_args: Invalid sequence number!");
+    return;
+  }
+}
 
 
 void send_string(size_t argc, char** argv) {
   struct sockaddr_in dest_addr; // To hold the destination address
-  char* end = NULL; // For parsing port number
   packet_info pi; // For building the packet to send
   sequence_num seq_num; // User-supplied sequence number; usually not needed
                         // but in this allows explicit out-of-sequence sends
-  struct addrinfo* aip; // For parsing address/port
-  int gai_retval; // For return value of getaddressinfo()
   char ip_str[INET_ADDRSTRLEN]; // For message printing
 
 
@@ -38,29 +69,7 @@ void send_string(size_t argc, char** argv) {
     return;
   }
 
-
-  // XXX: not safe if IPv6...
-  if ((gai_retval = getaddrinfo(argv[1], argv[2], NULL, &aip))) {
-    if (gai_retval == EAI_SYSTEM) {
-      perror("send_string");
-    }
-
-    fprintf(stderr, "send_string: %s\n", gai_strerror(gai_retval));
-    return;
-  }
-
-  assert(aip->ai_addrlen == sizeof(struct sockaddr_in));
-
-  dest_addr = *(struct sockaddr_in*)(aip->ai_addr);
-  freeaddrinfo(aip);
-
-
-  // Validate seq_num param
-  seq_num = strtoul(argv[3], &end, 10);
-  if (end == argv[3] || *end != '\0') {
-    SHELL_ERROR("send_string: Invalid sequence number!");
-    return;
-  }
+  parse_ip_args(argv, &dest_addr, &seq_num);
   
    
   // Construct the packet
@@ -96,4 +105,71 @@ void dump_config(size_t argc, char** argv) {
       the_client.id,
       the_client.sock_fd);
 
+}
+
+
+void send_bs(size_t argc, char** argv) {
+  struct sockaddr_in dest_addr; // To hold the destination address
+  packet_info pi; // For making the packet to send
+  sequence_num seq_num; // User-supplied sequence number
+
+
+  if (argc != 5) {
+    SHELL_ERROR("Usage: send_bs [dest_ip] [port] [seq_num] [l|e]\n\t"
+      "l - Bad length\n\te - Missing end marker\n");
+    return;
+  }
+  
+  parse_ip_args(argv, &dest_addr, &seq_num);
+
+  
+  // Make the packet 
+  pi.id = the_client.id;
+  pi.type = DATA;
+  size_t raw_len;
+
+  switch (*argv[4]) {
+    case 'l':
+      pi.cont.data_info.len = 3; // XXX: 10 is not the length of the payload
+      pi.cont.data_info.payload = "bs";
+      pi.cont.data_info.seq_num = seq_num;
+
+      raw_len =
+        flatten(&pi, the_client.send_buf, sizeof(the_client.send_buf));
+
+      // Mess up the length field
+      the_client.send_buf[
+          sizeof(PACKET_START) +
+          sizeof(client_id) +
+          sizeof(uint16_t) +
+          sizeof(sequence_num)
+        ] = 1;
+
+      break;
+
+    case 'e':
+      pi.cont.data_info.len = strlen("hello") + 1;
+      pi.cont.data_info.payload = "hello";
+      pi.cont.data_info.seq_num = seq_num;
+
+      raw_len =
+        flatten(&pi, the_client.send_buf, sizeof(the_client.send_buf));
+    
+      // Mess up the end flag
+      the_client.send_buf[raw_len - 1] = 0xAA;
+
+      break;
+    default:
+      SHELL_ERROR("send_bs: Invalid argument!\n"); 
+      return;
+  }
+
+  
+  // Send out the bs
+  sendto(the_client.sock_fd, the_client.send_buf, raw_len, 0,
+    (struct sockaddr*)&dest_addr, sizeof(dest_addr));
+
+
+  // Expecting a reject packet...
+  client_recv_packet(&the_client);
 }
